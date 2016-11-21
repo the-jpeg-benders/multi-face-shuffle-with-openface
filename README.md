@@ -22,7 +22,8 @@ $ ./demos/web/start-servers.sh
 
 3. *Clone or download this github project locally*
 
-4. Run the following docker command to access the image
+4. Run the following docker command to access the image. 
+> replace <path_to_this_file> with the absolute path to getFace.py
 ````sh
 $ docker run -v <path_to_this_file>:/mnt/host -p 9000:9000 -p 8000:8000 -t -i bamos/openface /bin/bash`
 ````
