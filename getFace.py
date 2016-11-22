@@ -6,10 +6,10 @@ import time
 import cv2
 import numpy as np
 import openface
-
+import dlib
 # Initialize paths and directories
 filepath = os.path.dirname(os.path.abspath(__file__))
-imgPath = os.path.join(filepath,'mytestgroup.jpg')
+imgPath = os.path.join(filepath,'mytestgroup2.jpg')
 modelDir = os.path.join('/root','openface','models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
@@ -32,32 +32,37 @@ if __name__ == '__main__':
     bgrImg = cv2.imread(imgPath)
     rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
 
+    origRGB = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB) #Save the original
+
     # Get all the faces in the image
     # Provides an array of bounding boxes
     # Each bounding box contains coordinates for top left and bottom right of the face
     bbArr = align.getAllFaceBoundingBoxes(rgbImg)
 
     # For each face in the array
-    i = 1
+    i = 0
     for bb in bbArr:
-
         # Get the landmarks of the face.
         # Returns an array of coordinates.
         # Each coordinate represents a certain point on the face.
         # To get a list of points, see:
         # http://openface-api.readthedocs.io/en/latest/openface.html#openface-aligndlib-class
-        landmarks = align.findLandmarks(rgbImg, bb)
+        #### landmarks = align.findLandmarks(rgbImg, bb)
 
         # Align the face and get make an image
-        alignedImg = align.align(imageDimension, rgbImg, bb, skipMulti=False)
+        face = align.align(imageDimension, rgbImg, bb, skipMulti=False, landmarkIndices=[0,16,8])
+        if (i+1 < len(bbArr)):
+            nextIndex = i+1
+        else:
+            nextIndex = 0
 
-        print(bb)
-        print("\n\n")
+        resizedFace = cv2.resize(face, (dlib.rectangle.width(bbArr[nextIndex]), dlib.rectangle.height(bbArr[nextIndex])))
+        (x, y) = (dlib.rectangle.left(bbArr[nextIndex]), dlib.rectangle.top(bbArr[nextIndex]))
+        origRGB[y: y+resizedFace.shape[0], x: x+resizedFace.shape[1]] = resizedFace
+        i+=1
 
-        # Convert aligned image to BGR format for save
-        alignedImgBGR = cv2.cvtColor(alignedImg, cv2.COLOR_RGB2BGR)
+    # Convert aligned image to BGR format for save
+    outputBGR = cv2.cvtColor(origRGB, cv2.COLOR_RGB2BGR)
 
-        # Save just the face on to the disk
-        cv2.imwrite('output' + str(i) + '.jpg', alignedImgBGR)
-    
-
+    # Save just the face on to the disk
+    cv2.imwrite('swappedface.jpg', outputBGR)
