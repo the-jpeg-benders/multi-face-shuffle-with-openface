@@ -9,7 +9,7 @@ import openface
 import dlib
 # Initialize paths and directories
 filepath = os.path.dirname(os.path.abspath(__file__))
-imgPath = os.path.join(filepath,'mytestgroup2.jpg')
+imgPath = os.path.join(filepath,'mytestgroup.jpg')
 modelDir = os.path.join('/root','openface','models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
@@ -29,7 +29,7 @@ verbose = True
 if __name__ == '__main__':
 
     # Set up: load the image and convert to RGB format for processing
-    bgrImg = cv2.imread(imgPath)
+    bgrImg = cv2.imread(imgPath, -1)
     rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
 
     origRGB = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB) #Save the original
@@ -40,26 +40,45 @@ if __name__ == '__main__':
     bbArr = align.getAllFaceBoundingBoxes(rgbImg)
 
     # For each face in the array
-    i = 0
+    index = 0
     for bb in bbArr:
         # Get the landmarks of the face.
         # Returns an array of coordinates.
         # Each coordinate represents a certain point on the face.
         # To get a list of points, see:
         # http://openface-api.readthedocs.io/en/latest/openface.html#openface-aligndlib-class
-        #### landmarks = align.findLandmarks(rgbImg, bb)
+        landmarks = align.findLandmarks(rgbImg, bb)
+        outerface = landmarks[0:16] + landmarks[26:22:-1] + landmarks[21:17:-1]
+        pts = np.asarray(outerface)
+        mask = np.zeros((rgbImg.shape[0], rgbImg.shape[1]), dtype=np.uint8)
+        cv2.fillConvexPoly(mask, pts, (255,)*4)
 
         # Align the face and get make an image
-        face = align.align(imageDimension, rgbImg, bb, skipMulti=False, landmarkIndices=[0,16,8])
-        if (i+1 < len(bbArr)):
-            nextIndex = i+1
+        face = cv2.bitwise_and(rgbImg, rgbImg, mask=mask)
+
+        face = align.align(imageDimension, face, bb, skipMulti=False, landmarkIndices=[0,16,8])
+        cv2.imwrite('test' +str(index)+'.jpg', face)
+                
+        if (index+1 < len(bbArr)):
+            nextIndex = index+1
         else:
             nextIndex = 0
 
-        resizedFace = cv2.resize(face, (dlib.rectangle.width(bbArr[nextIndex]), dlib.rectangle.height(bbArr[nextIndex])))
-        (x, y) = (dlib.rectangle.left(bbArr[nextIndex]), dlib.rectangle.top(bbArr[nextIndex]))
-        origRGB[y: y+resizedFace.shape[0], x: x+resizedFace.shape[1]] = resizedFace
-        i+=1
+        otherImgLandmarks = align.findLandmarks(rgbImg, bbArr[nextIndex])
+        center = otherImgLandmarks[33]
+        right = abs(otherImgLandmarks[16][0] - center[0])
+        left = abs(otherImgLandmarks[0][0] - center[0])
+        top = abs(otherImgLandmarks[24][1] - center[1])
+        bottom = abs(center[1] - otherImgLandmarks[8][1])
+        (x, y) = center
+
+        resizedFace = cv2.resize(face, (left+right, top+bottom))
+        for i in range(-top, bottom):
+            for j in range(-left, right):
+                if (np.any(resizedFace[i+top,j+left] != 0)):
+                    origRGB[y+i,x+j] = resizedFace[i+top,j+left]
+        ## origRGB[y: y+resizedFace.shape[0], x: x+resizedFace.shape[1]] = resizedFace
+        index+=1
 
     # Convert aligned image to BGR format for save
     outputBGR = cv2.cvtColor(origRGB, cv2.COLOR_RGB2BGR)
