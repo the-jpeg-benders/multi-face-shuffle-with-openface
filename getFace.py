@@ -9,7 +9,7 @@ import openface
 import dlib
 # Initialize paths and directories
 filepath = os.path.dirname(os.path.abspath(__file__))
-imgPath = os.path.join(filepath,'mytestgroup.jpg')
+imgPath = os.path.join(filepath,'test-images','theoffice.jpg')
 modelDir = os.path.join('/root','openface','models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
@@ -59,7 +59,6 @@ if __name__ == '__main__':
         face = cv2.bitwise_and(rgbImg, rgbImg, mask=mask)
 
         face = align.align(imageDimension, face, bb, skipMulti=False, landmarkIndices=[0,16,8])
-        cv2.imwrite('test' +str(index)+'.jpg', cv2.cvtColor(face, cv2.COLOR_BGR2RGB))
      
         if (index+1 < len(bbArr)):
             nextIndex = index+1
@@ -90,15 +89,12 @@ if __name__ == '__main__':
                 if (isBlack(resizedFace[a, b+1]) == True and isBlack(resizedFace[a,b]) == False):
                     inpaintMask[a,b:b-4] = 255
 
-        cv2.imwrite('inpaint' +str(index)+'.jpg', inpaintMask)
         for i in range(-top, bottom):
             for j in range(-left, right):
                 if (np.all(resizedFace[i+top,j+left] >= 8)):
                     origRGB[y+i,x+j] = resizedFace[i+top,j+left]
-        ## origRGB[y: y+resizedFace.shape[0], x: x+resizedFace.shape[1]] = resizedFace
-        print(origRGB.shape)
+
         origRGB[y-top:y+bottom,x-left:x+right] = cv2.inpaint(origRGB[y-top:y+bottom, x-left: x+right], inpaintMask, 2, cv2.INPAINT_NS)
-        print(origRGB.shape)
         index+=1
 
     # Convert aligned image to BGR format for save
