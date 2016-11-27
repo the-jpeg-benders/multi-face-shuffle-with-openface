@@ -24,6 +24,8 @@ align = openface.AlignDlib(dlibModel)
 imageDimension = 100
 verbose = True
 
+def isBlack(p):
+    return p[0] <= 0 and p[1] <= 0 and p[2] <= 10
 
 # Main function
 if __name__ == '__main__':
@@ -51,14 +53,14 @@ if __name__ == '__main__':
         outerface = landmarks[0:16] + landmarks[26:22:-1] + landmarks[21:17:-1]
         pts = np.asarray(outerface)
         mask = np.zeros((rgbImg.shape[0], rgbImg.shape[1]), dtype=np.uint8)
-        cv2.fillConvexPoly(mask, pts, (255,)*4)
+        cv2.fillConvexPoly(mask, pts, 255)
 
         # Align the face and get make an image
         face = cv2.bitwise_and(rgbImg, rgbImg, mask=mask)
 
         face = align.align(imageDimension, face, bb, skipMulti=False, landmarkIndices=[0,16,8])
-        cv2.imwrite('test' +str(index)+'.jpg', face)
-                
+        cv2.imwrite('test' +str(index)+'.jpg', cv2.cvtColor(face, cv2.COLOR_BGR2RGB))
+     
         if (index+1 < len(bbArr)):
             nextIndex = index+1
         else:
@@ -73,11 +75,30 @@ if __name__ == '__main__':
         (x, y) = center
 
         resizedFace = cv2.resize(face, (left+right, top+bottom))
+
+        inpaintMask = np.zeros((resizedFace.shape[0], resizedFace.shape[1]), dtype=np.uint8)
+
+        for a in range(0, resizedFace.shape[0]-1):
+            for b in range(0, resizedFace.shape[1]-1):
+                if (isBlack(resizedFace[a-1, b]) == True and isBlack(resizedFace[a,b]) == False):
+                    inpaintMask[a:a+4,b] = 255
+                if (isBlack(resizedFace[a+1, b]) == True and isBlack(resizedFace[a,b]) == False):
+                    inpaintMask[a-4:a,b] = 255
+
+                if (isBlack(resizedFace[a, b-1]) == True and isBlack(resizedFace[a,b]) == False):
+                    inpaintMask[a,b:b+4] = 255
+                if (isBlack(resizedFace[a, b+1]) == True and isBlack(resizedFace[a,b]) == False):
+                    inpaintMask[a,b:b-4] = 255
+
+        cv2.imwrite('inpaint' +str(index)+'.jpg', inpaintMask)
         for i in range(-top, bottom):
             for j in range(-left, right):
-                if (np.any(resizedFace[i+top,j+left] != 0)):
+                if (np.all(resizedFace[i+top,j+left] >= 8)):
                     origRGB[y+i,x+j] = resizedFace[i+top,j+left]
         ## origRGB[y: y+resizedFace.shape[0], x: x+resizedFace.shape[1]] = resizedFace
+        print(origRGB.shape)
+        origRGB[y-top:y+bottom,x-left:x+right] = cv2.inpaint(origRGB[y-top:y+bottom, x-left: x+right], inpaintMask, 2, cv2.INPAINT_NS)
+        print(origRGB.shape)
         index+=1
 
     # Convert aligned image to BGR format for save
