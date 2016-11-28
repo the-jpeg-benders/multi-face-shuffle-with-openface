@@ -1,10 +1,10 @@
-# face-filters-with-openface
-Adding snapchat-like filters on a face using openface Face Recognition
+# face-shuffle-with-openface
+Extracting face from one person in the image and putting it on top of another person and vice versa. Supports multi-face images
 
-### Set up
-1. *Install docker*: https://www.docker.com/products/docker
+### Set up using docker
+1) *Install docker*: https://www.docker.com/products/docker
 
-2. *Set up a docker for openface with the following steps or by going to*
+2) *Set up a docker for openface with the following steps or by going to*
 https://cmusatyalab.github.io/openface/setup/
 
 > > Automated Docker Build
@@ -20,19 +20,19 @@ $ ./images/examples/carell.jpg
 $ ./demos/web/start-servers.sh
 ````
 
-3. *Clone or download this github project locally*
+3) *Clone or download this github project locally*
 
-4. Run the following docker command to access the image. 
+4) Run the following docker command to access the image. 
 > replace <path_to_this_file> with the absolute path to getFace.py
 ````sh
-$ docker run -v <path_to_this_file>:/mnt/host -p 9000:9000 -p 8000:8000 -t -i bamos/openface /bin/bash`
+$ docker run -v <path_to_this_file>:/mnt/host -p 9000:9000 -p 8000:8000 -t -i bamos/openface /bin/bash
 ````
 
-5. Run getFace.py
+5) Run getFace.py
 ````sh
 $ cd /mnt/host
 $ python getFace.py
 ````
 
-
-
+### Set up using source files
+    Check readme-source file
