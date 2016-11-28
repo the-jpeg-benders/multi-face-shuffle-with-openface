@@ -58,6 +58,7 @@ if __name__ == '__main__':
     # Get all the faces in the image
     # Provides an array of bounding boxes
     # Each bounding box contains coordinates for top left and bottom right of the face
+    print("Detecting faces in Image")
     bbArr = align.getAllFaceBoundingBoxes(rgbImg)
     print("Detected " + str(len(bbArr)) + " faces")
     # For each face in the array
@@ -111,9 +112,9 @@ if __name__ == '__main__':
         print("          Applying face on top of Face " + str(nextIndex + 1))
         for i in range(-top, bottom):
             for j in range(-left, right):
-                if (np.all(resizedFace[i+top,j+left] >= 8)):
+                if (np.all(resizedFace[i+top,j+left] != 0)):
                     origRGB[y+i,x+j] = resizedFace[i+top,j+left]
-        print("          Cleaning artifacts using image inpainting " + str(nextIndex + 1))
+        print("          Cleaning artifacts on face using image inpainting")
         origRGB[y-top:y+bottom,x-left:x+right] = cv2.inpaint(origRGB[y-top:y+bottom, x-left: x+right], inpaintMask, 2, cv2.INPAINT_NS)
         print("    Processed Face: " + str(index+1))
         index+=1
